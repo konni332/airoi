@@ -16,10 +16,15 @@ pub fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
         }
 
         // Contacts
-        AiroiCommand::AddContact { name, finger_print } => {
+        AiroiCommand::AddContact { name, public_key, address } => {
+            let raw_key = bs58::decode(public_key.clone()).into_vec()?;
+            let finger_print = airoi_core::keys::key_gen::get_fingerprint(&raw_key);
+
             let new_contact = Contact {
+                finger_print,
                 name: name.clone(),
-                finger_pint: finger_print.clone(),
+                address: address.clone(),
+                public_key: public_key.clone(),
                 added_at: chrono::Utc::now().to_rfc3339(),
             };
             airoi_core::keys::contacts::add_contact(new_contact)?;
@@ -51,7 +56,7 @@ fn list_contacts() -> anyhow::Result<()> {
         return Ok(println!("    No contacts found"));
     }
     for contact in contacts {
-        println!("    {}: {}", contact.name, contact.finger_pint);
+        println!("    {}: {}", contact.name, contact.finger_print());
     }
     Ok(())
 }

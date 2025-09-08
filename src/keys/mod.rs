@@ -5,7 +5,8 @@ pub mod contacts;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KeyPair {
-    pub(crate) public_key: Vec<u8>,
-    pub(crate) private_key: Vec<u8>,
+    pub(crate) public_key: String,
+    pub(crate) finger_print: String,
+    pub(crate) private_key: String,
     pub(crate) created_at: String,
 }

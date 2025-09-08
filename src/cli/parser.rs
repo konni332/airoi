@@ -22,7 +22,9 @@ pub enum AiroiCommand {
         /// Name of the contact
         name: String,
         /// Public key of the contact
-        finger_print: String,
+        public_key: String,
+        /// Address of the contact
+        address: String,
     },
     /// Remove someone from your contacts
     RemoveContact {

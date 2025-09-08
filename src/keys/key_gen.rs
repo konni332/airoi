@@ -17,10 +17,14 @@ pub fn generate_key_pair() -> Result<KeyPair> {
     let signing_key = SigningKey::from_bytes(&seed);
     let verifying_key: VerifyingKey = signing_key.verifying_key();
 
+    let private_key = bs58::encode(signing_key.to_bytes()).into_string();
+    let public_key = bs58::encode(verifying_key.to_bytes()).into_string();
 
+    let finger_print = get_fingerprint(&verifying_key.to_bytes());
     Ok(KeyPair {
-        private_key: signing_key.to_bytes().to_vec(),
-        public_key: verifying_key.to_bytes().to_vec(),
+        private_key,
+        public_key,
+        finger_print,
         created_at: Utc::now().to_rfc3339(),
     })
 
@@ -40,7 +44,7 @@ pub fn store_key_pair(key_pair: KeyPair) -> Result<PathBuf> {
 pub fn get_key_pair() -> Result<KeyPair> {
     let mut path = get_airoi_dir();
     path.push("keys.json");
-    let key_pair = serde_json::from_str::<KeyPair>(&std::fs::read_to_string(&path)?)?;
+    let key_pair = serde_json::from_str::<KeyPair>(&fs::read_to_string(&path)?)?;
     Ok(key_pair)
 }
 
@@ -54,8 +58,8 @@ pub fn get_fingerprint(public_key: &[u8]) -> String {
 }
 
 impl KeyPair {
-    pub fn finger_print(&self) -> String {
-        get_fingerprint(&self.public_key)
+    pub fn finger_print(&self) -> &str {
+        &self.finger_print
     }
 }
 

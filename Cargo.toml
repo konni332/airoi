@@ -3,6 +3,10 @@ name = "airoi"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "airoi_cli"
+path = "src/main.rs"
+
 [lib]
 name = "airoi_core"
 path = "src/lib.rs"
@@ -20,4 +24,6 @@ rand = "0.9.2"
 sha2 = "0.11.0-rc.2"
 bs58 = "0.5.1"
 chrono = "0.4.42"
-hex = "0.4.3"
+tokio = {version = "1.47.1", features = ["full"]}
+snow = "0.10.0"
+chacha20poly1305 = {version = "0.10.1"}

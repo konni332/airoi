@@ -7,7 +7,9 @@ use crate::util::get_airoi_dir;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Contact {
     pub name: String,
-    pub finger_pint: String,
+    pub public_key: String,
+    pub finger_print: String,
+    pub address: String,
     pub added_at: String,
 }
 
@@ -51,4 +53,10 @@ pub fn remove_contact(name: &str) -> Result<()> {
     }
     store_contacts(contacts)?;
     Ok(())
+}
+
+impl Contact {
+    pub fn finger_print(&self) -> &str {
+        &self.finger_print
+    }
 }
