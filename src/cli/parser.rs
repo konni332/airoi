@@ -1,6 +1,6 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
-#[derive(Parser)]
+#[derive(Parser, Debug, Clone)]
 #[clap(
     version = "0.1.0",
     author = "konni332",
@@ -11,10 +11,24 @@ pub struct Cli {
     pub command: AiroiCommand,
 }
 
-#[derive(Parser)]
+#[derive(Subcommand, Debug, Clone)]
 pub enum AiroiCommand {
     /// Generate a new key pair and store it in the default location (depends on OS)
     KeyGen,
     /// Get the fingerprint of the current key pair in the default location (depends on OS)
     Fingerprint,
+    /// Add someone to your contacts
+    AddContact {
+        /// Name of the contact
+        name: String,
+        /// Public key of the contact
+        finger_print: String,
+    },
+    /// Remove someone from your contacts
+    RemoveContact {
+        /// Name of the contact
+        name: String,
+    },
+    /// List all contacts
+    ListContacts,
 }

@@ -1,12 +1,13 @@
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use crate::error::Result;
+use crate::keys::key_gen::get_fingerprint;
 use crate::util::get_airoi_dir;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Contact {
     pub name: String,
-    pub public_key: String,
+    pub finger_pint: String,
     pub added_at: String,
 }
 
@@ -14,6 +15,9 @@ pub struct Contact {
 pub fn get_contacts() -> Result<Vec<Contact>> {
     let mut path = get_airoi_dir();
     path.push("contacts.json");
+    if !path.exists() {
+        return Ok(vec![]);
+    }
     let contacts = serde_json::from_str::<Vec<Contact>>(
         &std::fs::read_to_string(&path)?
     )?;

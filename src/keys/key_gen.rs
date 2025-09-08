@@ -44,13 +44,19 @@ pub fn get_key_pair() -> Result<KeyPair> {
     Ok(key_pair)
 }
 
-pub fn get_fingerprint(key_pair: &KeyPair) -> String {
+pub fn get_fingerprint(public_key: &[u8]) -> String {
     let mut hasher = sha2::Sha256::new();
-    hasher.update(&key_pair.public_key);
+    hasher.update(public_key);
 
     let finger_print = hasher.finalize();
     let fingerprint_bs58 = bs58::encode(finger_print).into_string();
     fingerprint_bs58
+}
+
+impl KeyPair {
+    pub fn finger_print(&self) -> String {
+        get_fingerprint(&self.public_key)
+    }
 }
 
 #[cfg(test)]
