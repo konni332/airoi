@@ -86,9 +86,6 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
             bail!("Contact not found")
 
         }
-        _ => {
-            bail!("Command not implemented")
-        }
     }
     Ok(())
 }

@@ -1,6 +1,5 @@
 use std::fs;
 use std::path::PathBuf;
-use std::ptr::hash;
 use chrono::Utc;
 use ed25519_dalek::{SigningKey, VerifyingKey};
 use rand::rngs::OsRng;
@@ -96,8 +95,45 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_generate_key_pair() {
-        let keys = generate_key_pair().unwrap();
-        println!("{:#?}", keys);
+    fn test_ed2519_sk_to_x25519_deterministic() {
+        let ed_sk = [1u8; 32];
+        let x_sk1 = ed25519_sk_to_x25519(&ed_sk);
+        let x_sk2 = ed25519_sk_to_x25519(&ed_sk);
+        assert_eq!(x_sk1, x_sk2);
+    }
+
+    #[test]
+    fn test_ed2519_pk_matches_sk_conversion() {
+        let seed = [42u8; 32];
+        let ed_sk = SigningKey::from_bytes(&seed);
+        let ed_pl = ed_sk.verifying_key();
+
+        let x_sk = ed25519_sk_to_x25519(&ed_sk.to_bytes());
+        let x_pk_from_sk = x25519(x_sk, X25519_BASEPOINT_BYTES);
+
+        let x_pk_from_pk = ed25519_pk_to_x25519(&ed_pl.to_bytes());
+
+        assert_eq!(x_pk_from_sk, x_pk_from_pk);
+    }
+
+    #[test]
+    fn test_generate_key_pair_valid() {
+        let kp = generate_key_pair().expect("key pair generation failed");
+
+        assert_eq!(kp.private_key().ed25519_key_raw().len(), 32);
+        assert_eq!(kp.private_key().x25519_key_raw().len(), 32);
+        assert_eq!(kp.public_key().ed25519_key_raw().len(), 32);
+        assert_eq!(kp.public_key().x25519_key_raw().len(), 32);
+
+        let derived_x_pub = ed25519_pk_to_x25519(kp.public_key().ed25519_key_raw());
+        assert_eq!(derived_x_pub, kp.public_key().x25519_key_raw());
+    }
+
+    #[test]
+    fn test_generate_key_pair_unique() {
+        let kp1 = generate_key_pair().expect("key pair generation failed");
+        let kp2 = generate_key_pair().expect("key pair generation failed");
+        assert_ne!(kp1.public_key().ed25519_key_raw(), kp2.public_key().ed25519_key_raw());
+        assert_ne!(kp1.public_key().x25519_key_raw(), kp2.public_key().x25519_key_raw());
     }
 }

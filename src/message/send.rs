@@ -3,14 +3,14 @@ use snow::params::NoiseParams;
 use tokio::net::TcpStream;
 use crate::error::Result;
 use crate::keys::contacts::Contact;
-use crate::keys::key_gen::{fetch_local_key_pair, generate_key_pair, get_fingerprint};
+use crate::keys::key_gen::{fetch_local_key_pair, get_fingerprint};
 use crate::message::{read_frame, write_frame};
 
 pub async fn send(contact: Contact, msg: &str) -> Result<()> {
     let keys = fetch_local_key_pair()?;
 
     let local_priv = keys.private_key().x25519_key_raw().to_vec();
-    let remote_pub = contact.public_key().x25519_key_raw().to_vec();
+    let _remote_pub = contact.public_key().x25519_key_raw().to_vec();
 
     let params: NoiseParams = "Noise_XX_25519_ChaChaPoly_BLAKE2s".parse()?;
     let mut builder = Builder::new(params);

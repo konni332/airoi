@@ -1,5 +1,4 @@
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use crate::error::AiroiError;
 
 pub mod receive;
 pub mod send;

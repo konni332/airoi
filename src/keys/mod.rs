@@ -1,6 +1,4 @@
-use ed25519_dalek::SigningKey;
 use serde::{Deserialize, Serialize};
-use x25519_dalek::PublicKey;
 use crate::keys::key_gen::get_fingerprint;
 
 pub mod key_gen;

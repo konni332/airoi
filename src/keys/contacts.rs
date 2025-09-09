@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::error::Result;
 use crate::keys::Key;
-use crate::keys::key_gen::{ed25519_pk_to_x25519, ed25519_sk_to_x25519};
+use crate::keys::key_gen::{ed25519_pk_to_x25519};
 use crate::util::get_airoi_dir;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

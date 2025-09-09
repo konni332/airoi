@@ -3,17 +3,6 @@ use crate::error::{Result, AiroiError};
 use crate::keys::contacts::Contact;
 use crate::message::{read_frame, write_frame};
 
-fn check_remote_static(remote_static: Option<&[u8]>, contact: &Contact) -> Result<bool> {
-    if let None = remote_static {
-        return Err(AiroiError::RemoteStatic("handshake did not reveal remote static key".to_string()));
-    }
-    let expected_x_pub = contact.public_key().x25519_key_raw();
-    let remote_static = remote_static.unwrap();
-    Ok(expected_x_pub == remote_static)
-}
-
-
-
 pub async fn handle_connection(
     builder: snow::Builder<'_>,
     socket: &mut tokio::net::TcpStream,
@@ -98,3 +87,14 @@ pub async fn handle_connection(
     
     Ok(())
 }
+
+
+
+
+
+
+
+
+
+
+
