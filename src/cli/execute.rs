@@ -1,8 +1,9 @@
 use anyhow::bail;
 use airoi_core::keys::contacts::{get_contacts, Contact};
-use airoi_core::keys::key_gen::{generate_key_pair, fetch_local_key_pair, store_key_pair};
+use airoi_core::keys::key_gen::{generate_key_pair};
 use airoi_core::message::receive::{receive};
 use airoi_core::message::send::send;
+use airoi_core::storage::{fetch_local_keypair, store_keypair};
 use crate::cli::parser::{AiroiCommand, Cli};
 
 
@@ -11,8 +12,8 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
     match &cli.command {
         AiroiCommand::KeyGen => {
             let key_pair = generate_key_pair()?;
-            let stored_at = store_key_pair(key_pair.clone())?;
-            println!("New key pair stored at: {}", stored_at.to_string_lossy());
+            store_keypair(&key_pair)?;
+            println!("New key pair stored in OS specific vault");
             println!("    Public key (ed25519): {}", key_pair.public_key().ed25519_key());
         }
         AiroiCommand::Fingerprint => {
@@ -63,7 +64,7 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
 }
 
 fn output_fingerprint() -> anyhow::Result<()> {
-    let current = fetch_local_key_pair()?;
+    let current = fetch_local_keypair()?;
     let fingerprint = current.fingerprint_ed();
     println!("Fingerprint (ed25519): {}", fingerprint);
     Ok(())

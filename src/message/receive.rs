@@ -6,8 +6,8 @@ use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use crate::error::{Result, AiroiError};
 use crate::keys::contacts::{get_contacts, store_contacts, Contact};
-use crate::keys::key_gen::fetch_local_key_pair;
 use crate::message::{read_frame, write_frame, Message};
+use crate::storage::fetch_local_keypair;
 
 pub async fn handle_connection(
     builder: snow::Builder<'_>,
@@ -121,7 +121,7 @@ pub const DEFAULT_ADDRESS: &str = "0.0.0.0:4444";
 pub async fn receive(addr: Option<String>, tx: mpsc::Sender<Message>) -> Result<()> {
     let addr = addr.unwrap_or(DEFAULT_ADDRESS.to_string());
 
-    let key_pair = fetch_local_key_pair()?;
+    let key_pair = fetch_local_keypair()?;
     let local_priv = key_pair.private_key().x25519_key_raw().to_vec();
 
     let contacts = get_contacts()?;
@@ -155,8 +155,6 @@ pub async fn receive(addr: Option<String>, tx: mpsc::Sender<Message>) -> Result<
         });
     }
 }
-
-
 
 pub fn tofu(raw_remote_static: Vec<u8>, peer_addr: &str) -> Result<Contact> {
     let mut contacts = get_contacts()?;

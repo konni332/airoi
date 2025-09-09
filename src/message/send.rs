@@ -3,11 +3,12 @@ use snow::params::NoiseParams;
 use tokio::net::TcpStream;
 use crate::error::Result;
 use crate::keys::contacts::Contact;
-use crate::keys::key_gen::{fetch_local_key_pair, get_fingerprint};
+use crate::keys::key_gen::{get_fingerprint};
 use crate::message::{read_frame, write_frame};
+use crate::storage::fetch_local_keypair;
 
 pub async fn send(contact: Contact, msg: &str) -> Result<()> {
-    let keys = fetch_local_key_pair()?;
+    let keys = fetch_local_keypair()?;
 
     let local_priv = keys.private_key().x25519_key_raw().to_vec();
     let _remote_pub = contact.public_key().x25519_key_raw().to_vec();

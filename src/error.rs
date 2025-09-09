@@ -28,6 +28,15 @@ pub enum AiroiError {
     
     #[error("Sender not trusted: {0}")]
     SenderNotTrusted(String),
+
+    #[error("Keyring Error: {0}")]
+    Keyring(#[from] keyring::Error),
+
+    #[error("Base64 Decode Error: {0}")]
+    Base64Decode(#[from] base64::DecodeError),
+
+    #[error("Argon2 Error: {0}")]
+    Argon2(String),
 }
 
 pub type Result<T> = std::result::Result<T, AiroiError>;
