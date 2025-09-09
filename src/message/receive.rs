@@ -1,24 +1,15 @@
 use sha2::{Digest, Sha256};
 use crate::error::{Result, AiroiError};
 use crate::keys::contacts::Contact;
-use crate::keys::key_gen::get_fingerprint;
 use crate::message::{read_frame, write_frame};
 
-fn check_remote_static(remote_static: Option<&[u8]>, expected_pub_b58: &str) -> Result<()> {
-    let expected = bs58::decode(expected_pub_b58).into_vec()?;
-    match remote_static { 
-        Some(bytes) => {
-            if bytes == expected.as_slice() {
-                Ok(())
-            }
-            else { 
-                Err(AiroiError::RemoteStatic("remote static public key mismatch".to_string()))
-            }
-        }
-        None => {
-            Err(AiroiError::RemoteStatic("handshake did not reveal remote static key".to_string()))
-        } 
+fn check_remote_static(remote_static: Option<&[u8]>, contact: &Contact) -> Result<bool> {
+    if let None = remote_static {
+        return Err(AiroiError::RemoteStatic("handshake did not reveal remote static key".to_string()));
     }
+    let expected_x_pub = contact.public_key().x25519_key_raw();
+    let remote_static = remote_static.unwrap();
+    Ok(expected_x_pub == remote_static)
 }
 
 
@@ -58,17 +49,17 @@ pub async fn handle_connection(
         println!("Handshake complete; remote static key fingerprint (sha256 base58): {}", fingerprint_bs58);
         
         let mut matched_contact: Option<&Contact> = None;
-        println!("remote static fingerprint: {}", fingerprint_bs58);
         for contact in contacts {
-            println!("saved fingerprint: {}", contact.fingerprint_x());
             if contact.fingerprint_x() == fingerprint_bs58 {
                     matched_contact = Some(contact);
                 break; 
             }
         }
         match matched_contact {
-            Some(c) => println!("auth contact: {}", c.name),
-            None => println!("no auth contact found"), // TODO: require add TOFU or abort (prompt user)
+            None => {
+                return Err(AiroiError::UnknownSender(fingerprint_bs58));
+            }
+            _ => {}
         }
     }
     else {
@@ -82,7 +73,11 @@ pub async fn handle_connection(
         let frame = match read_frame(socket).await {
             Ok(frame) => frame,
             Err(e) => {
-                eprintln!("connection closed or error reading frame: {:?}", e);
+                if e.kind() == std::io::ErrorKind::UnexpectedEof {
+                    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                    continue;
+                }
+                eprintln!("error reading frame: {:?}", e);
                 break;
             }
         };

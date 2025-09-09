@@ -15,7 +15,7 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
             let key_pair = generate_key_pair()?;
             let stored_at = store_key_pair(key_pair.clone())?;
             println!("New key pair stored at: {}", stored_at.to_string_lossy());
-            println!("    Public key: {}", key_pair.public_key().ed25519_key());
+            println!("    Public key (ed25519): {}", key_pair.public_key().ed25519_key());
         }
         AiroiCommand::Fingerprint => {
             output_fingerprint()?;
@@ -25,8 +25,8 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
         AiroiCommand::AddContact { name, public_key, address } => {
             let raw_ed_public_key = bs58::decode(public_key).into_vec()?;
             let new_contact = Contact::new(name.clone(), raw_ed_public_key, address);
-            airoi_core::keys::contacts::add_contact(new_contact)?;
-            println!("Contact '{}' added", name);
+            airoi_core::keys::contacts::add_contact(new_contact.clone())?;
+            println!("Contact '{}' added. Public key (ed25519): {}", name, new_contact.public_key().ed25519_key());
         }
         AiroiCommand::RemoveContact { name } => {
             airoi_core::keys::contacts::remove_contact(name)?;
@@ -102,7 +102,10 @@ fn output_fingerprint() -> anyhow::Result<()> {
 
 fn list_contacts() -> anyhow::Result<()> {
     let local_keys = fetch_local_key_pair()?;
+    println!("Local ed fp: {}", local_keys.fingerprint_ed());
+    println!("Local ed k: {}", local_keys.public_key().ed25519_key());
     println!("Local x fp: {}", local_keys.fingerprint_x());
+    println!("Local x k: {}", local_keys.public_key().x25519_key());
     let contacts = get_contacts()?;
     println!("Contacts:");
     if contacts.is_empty() {
@@ -111,7 +114,9 @@ fn list_contacts() -> anyhow::Result<()> {
     for contact in contacts {
         println!("    {}:", contact.name);
         println!("        ed fp: {}", contact.fingerprint_ed());
+        println!("        ed k: {}", contact.public_key().ed25519_key());
         println!("        x fp: {}", contact.fingerprint_x());
+        println!("        x k: {}", contact.public_key().x25519_key());
     }
     Ok(())
 }

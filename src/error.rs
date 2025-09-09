@@ -22,6 +22,9 @@ pub enum AiroiError {
     
     #[error("Remote Static-Error: {0}")]
     RemoteStatic(String),
+    
+    #[error("Unknown Sender: {0}")]
+    UnknownSender(String),
 }
 
 pub type Result<T> = std::result::Result<T, AiroiError>;

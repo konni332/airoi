@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::error::Result;
 use crate::keys::Key;
-use crate::keys::key_gen::ed25519_to_x25519;
+use crate::keys::key_gen::{ed25519_pk_to_x25519, ed25519_sk_to_x25519};
 use crate::util::get_airoi_dir;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -56,7 +56,7 @@ pub fn remove_contact(name: &str) -> Result<()> {
 
 impl Contact {
     pub fn new(name: String, raw_ed_public_key: Vec<u8>, address: &str) -> Contact {
-        let raw_x_public_key = ed25519_to_x25519(&raw_ed_public_key).to_vec();
+        let raw_x_public_key = ed25519_pk_to_x25519(&raw_ed_public_key).to_vec();
         let public_key = Key::new(raw_ed_public_key, raw_x_public_key);
         Contact {
             name,

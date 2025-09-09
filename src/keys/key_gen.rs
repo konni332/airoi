@@ -18,7 +18,7 @@ pub fn generate_key_pair() -> Result<KeyPair> {
     let ed_sk = SigningKey::from_bytes(&seed);
     let ed_vk: VerifyingKey = ed_sk.verifying_key();
 
-    let x_sk = ed25519_to_x25519(&ed_sk.to_bytes());
+    let x_sk = ed25519_sk_to_x25519(&ed_sk.to_bytes());
     let x_pk = x25519(x_sk, X25519_BASEPOINT_BYTES);
 
     let private_key = Key::new(ed_sk.to_bytes().to_vec(), x_sk.to_vec());
@@ -31,7 +31,8 @@ pub fn generate_key_pair() -> Result<KeyPair> {
     })
 }
 
-pub fn ed25519_to_x25519(ed_bytes: &[u8]) -> [u8; 32] {
+/// Ed25519 Secret -> X25519 Secret
+pub fn ed25519_sk_to_x25519(ed_bytes: &[u8]) -> [u8; 32] {
     let hash = Sha512::digest(&ed_bytes);
     let mut x_sk = [0u8; 32];
     x_sk.copy_from_slice(&hash[0..32]);
@@ -40,6 +41,18 @@ pub fn ed25519_to_x25519(ed_bytes: &[u8]) -> [u8; 32] {
     x_sk[31] &= 127;
     x_sk[31] |= 64;
     x_sk
+}
+
+/// Ed25519 Public -> X25519 Public
+pub fn ed25519_pk_to_x25519(ed_pk: &[u8]) -> [u8; 32] {
+    use curve25519_dalek::edwards::CompressedEdwardsY;
+    use curve25519_dalek::montgomery::MontgomeryPoint;
+
+    let ed_pk: [u8; 32] = ed_pk.try_into().expect("invalid ed pk");
+    let compressed = CompressedEdwardsY(ed_pk);
+    let ed_point = compressed.decompress().expect("invalid ed point");
+    let mont_point: MontgomeryPoint = ed_point.to_montgomery();
+    mont_point.to_bytes()
 }
 
 pub fn store_key_pair(key_pair: KeyPair) -> Result<PathBuf> {
