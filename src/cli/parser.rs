@@ -33,4 +33,8 @@ pub enum AiroiCommand {
     },
     /// List all contacts
     ListContacts,
+    
+    Receive { addr: Option<String> },
+    
+    Send { name: String, message: String },
 }

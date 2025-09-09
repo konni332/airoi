@@ -10,6 +10,18 @@ pub enum AiroiError {
     
     #[error("Serde Error: {0}")]
     Serde(#[from] serde_json::Error),
+    
+    #[error("Base58 Decode-Error: {0}")]
+    Base58(#[from] bs58::decode::Error),
+    
+    #[error("Base58 Encode-Error: {0}")]
+    Base58Encode(#[from] bs58::encode::Error),
+    
+    #[error("Snow Error: {0}")]
+    Snow(#[from] snow::Error),
+    
+    #[error("Remote Static-Error: {0}")]
+    RemoteStatic(String),
 }
 
 pub type Result<T> = std::result::Result<T, AiroiError>;

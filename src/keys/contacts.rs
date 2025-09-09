@@ -1,14 +1,13 @@
-use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use crate::error::Result;
-use crate::keys::key_gen::get_fingerprint;
+use crate::keys::Key;
+use crate::keys::key_gen::ed25519_to_x25519;
 use crate::util::get_airoi_dir;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Contact {
     pub name: String,
-    pub public_key: String,
-    pub finger_print: String,
+    pub public_key: Key,
     pub address: String,
     pub added_at: String,
 }
@@ -56,7 +55,29 @@ pub fn remove_contact(name: &str) -> Result<()> {
 }
 
 impl Contact {
-    pub fn finger_print(&self) -> &str {
-        &self.finger_print
+    pub fn new(name: String, raw_ed_public_key: Vec<u8>, address: &str) -> Contact {
+        let raw_x_public_key = ed25519_to_x25519(&raw_ed_public_key).to_vec();
+        let public_key = Key::new(raw_ed_public_key, raw_x_public_key);
+        Contact {
+            name,
+            public_key,
+            address: address.to_string(),
+            added_at: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+    pub fn public_key(&self) -> &Key {
+        &self.public_key
+    }
+    pub fn address(&self) -> &str {
+        &self.address
+    }
+    pub fn added_at(&self) -> &str {
+        &self.added_at
+    }
+    pub fn fingerprint_ed(&self) -> &str {
+        self.public_key.fingerprint_ed()
+    }
+    pub fn fingerprint_x(&self) -> &str {
+        self.public_key.fingerprint_x()
     }
 }
