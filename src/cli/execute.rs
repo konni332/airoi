@@ -1,13 +1,11 @@
 use anyhow::bail;
-use snow::params::NoiseParams;
-use tokio::net::TcpListener;
 use airoi_core::keys::contacts::{get_contacts, Contact};
 use airoi_core::keys::key_gen::{generate_key_pair, fetch_local_key_pair, store_key_pair};
-use airoi_core::message::receive::handle_connection;
+use airoi_core::message::receive::{receive};
 use airoi_core::message::send::send;
 use crate::cli::parser::{AiroiCommand, Cli};
 
-pub const DEFAULT_ADDRESS: &str = "0.0.0.0:4444";
+
 
 pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
     match &cli.command {
@@ -35,44 +33,17 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
             list_contacts()?;
         }
         AiroiCommand::Receive { addr } => {
-            let addr = match addr {
-                Some(addr) => addr,
-                None => DEFAULT_ADDRESS,
-            };
+            let (tx, mut rx) = tokio::sync::mpsc::channel(1);
 
-            let key_pair = fetch_local_key_pair()?;
-            let local_priv = key_pair.private_key().x25519_key_raw().to_vec();
+            let addr = addr.clone();
+            tokio::spawn(async move {
+                if let Err(e) = receive(addr, tx).await {
+                    eprintln!("receive error: {}", e);
+                }
+            });
 
-
-            let contacts = get_contacts()?;
-            let params: NoiseParams = "Noise_XX_25519_ChaChaPoly_BLAKE2s".parse()?;
-
-
-            let listener = TcpListener::bind(&addr).await?;
-            println!("aioroi receiver listening on {}", addr);
-
-            loop {
-                let (mut socket, peer_addr) = listener.accept().await?;
-                println!("New connection from {}", peer_addr);
-
-                let contacts = contacts.clone();
-                let local_priv = local_priv.clone();
-                let params = params.clone();
-
-                tokio::spawn(async move {
-                    let builder = snow::Builder::new(params);
-                    let builder = match builder.local_private_key(&local_priv) {
-                        Ok(builder) => builder,
-                        Err(e) => {
-                            eprintln!("error setting local private key: {:?}", e);
-                            return;
-                        }
-                    };
-
-                    if let Err(e) = handle_connection(builder, &mut socket, &contacts).await {
-                        eprintln!("connection error from {}: {:?}", peer_addr, e);
-                    }
-                });
+            while let Some(msg) = rx.recv().await {
+                println!("{}", msg);
             }
         }
         AiroiCommand::Send { name, message } => {

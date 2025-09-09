@@ -1,8 +1,20 @@
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use crate::keys::contacts::Contact;
 
 pub mod receive;
 pub mod send;
 
+pub struct Message {
+    pub sender: Contact,
+    pub message: String,
+    pub received: String,
+}
+
+impl std::fmt::Display for Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:  {}: {}", self.received, self.sender.name, self.message)
+    }
+}
 
 async fn read_frame(stream: &mut tokio::net::TcpStream) -> std::io::Result<Vec<u8>> {
     let mut len_buf = [0u8; 2];

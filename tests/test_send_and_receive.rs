@@ -24,16 +24,19 @@ mod integration {
             &addr.to_string()
         )]);
 
+        let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+
         {
             let contacts = contacts.clone();
             let params = params.clone();
             let keypair = keypair.clone();
+            let tx = tx.clone();
 
             tokio::spawn(async move {
                 let (mut socket, _) = listener.accept().await.unwrap();
                 let mut builder = Builder::new(params.clone());
                 builder = builder.local_private_key(keypair.private_key().x25519_key_raw()).unwrap();
-                let _ = handle_connection(builder, &mut socket, &contacts).await;
+                let _ = handle_connection(builder, &mut socket, &contacts, tx).await;
             });
         }
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
@@ -41,5 +44,7 @@ mod integration {
         let contact = contacts[0].clone();
         send(contact, "test message").await.unwrap();
 
+        let received = rx.recv().await.unwrap();
+        assert_eq!(received.message, "test message");
     }
 }
