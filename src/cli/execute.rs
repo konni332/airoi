@@ -28,6 +28,7 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
         }
         AiroiCommand::RemoveContact { name } => {
             airoi_core::keys::contacts::remove_contact(name)?;
+            println!("Contact '{}' removed", name);
         }
         AiroiCommand::ListContacts => {
             list_contacts()?;
@@ -69,11 +70,6 @@ fn output_fingerprint() -> anyhow::Result<()> {
 }
 
 fn list_contacts() -> anyhow::Result<()> {
-    let local_keys = fetch_local_key_pair()?;
-    println!("Local ed fp: {}", local_keys.fingerprint_ed());
-    println!("Local ed k: {}", local_keys.public_key().ed25519_key());
-    println!("Local x fp: {}", local_keys.fingerprint_x());
-    println!("Local x k: {}", local_keys.public_key().x25519_key());
     let contacts = get_contacts()?;
     println!("Contacts:");
     if contacts.is_empty() {
@@ -81,10 +77,7 @@ fn list_contacts() -> anyhow::Result<()> {
     }
     for contact in contacts {
         println!("    {}:", contact.name);
-        println!("        ed fp: {}", contact.fingerprint_ed());
-        println!("        ed k: {}", contact.public_key().ed25519_key());
-        println!("        x fp: {}", contact.fingerprint_x());
-        println!("        x k: {}", contact.public_key().x25519_key());
+        println!("        fingerprint: {}", contact.fingerprint_ed());
     }
     Ok(())
 }

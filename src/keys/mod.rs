@@ -47,6 +47,15 @@ impl Key {
             fingerprint_x,
         }
     }
+    pub fn new_tofu(raw_remote_static: Vec<u8>) -> Key {
+        let fingerprint_x = get_fingerprint(&raw_remote_static);
+        Key {
+            ed25519_key: (vec![], String::new()),
+            fingerprint_ed: String::new(),
+            x25519_key: (raw_remote_static.clone(), bs58::encode(raw_remote_static).into_string()),
+            fingerprint_x
+        }
+    }
     pub fn ed25519_key(&self) -> &str {
         &self.ed25519_key.1
     }

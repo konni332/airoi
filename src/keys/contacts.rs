@@ -65,6 +65,15 @@ impl Contact {
             added_at: chrono::Utc::now().to_rfc3339(),
         }
     }
+    pub fn new_tofu(name: String, raw_remote_static: Vec<u8>, address: &str) -> Contact {
+        let public_key = Key::new_tofu(raw_remote_static);
+        Contact {
+            name,
+            public_key,
+            address: address.to_string(),
+            added_at: chrono::Utc::now().to_rfc3339(),
+        }
+    }
     pub fn public_key(&self) -> &Key {
         &self.public_key
     }

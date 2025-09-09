@@ -1,10 +1,11 @@
 use chrono::Utc;
+use inquire::{Confirm, Text};
 use sha2::{Digest, Sha256};
 use snow::params::NoiseParams;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use crate::error::{Result, AiroiError};
-use crate::keys::contacts::{get_contacts, Contact};
+use crate::keys::contacts::{get_contacts, store_contacts, Contact};
 use crate::keys::key_gen::fetch_local_key_pair;
 use crate::message::{read_frame, write_frame, Message};
 
@@ -35,7 +36,7 @@ pub async fn handle_connection(
     
     // ==================== Handshake Done ====================
 
-    let mut matched_contact: Option<&Contact> = None;
+    let mut matched_contact: Option<Contact> = None;
     let remote_static_opt = noise.get_remote_static();
     if let Some(remote_static) = remote_static_opt {
         let mut hasher = Sha256::new();
@@ -43,16 +44,27 @@ pub async fn handle_connection(
         let fingerprint = hasher.finalize();
         let fingerprint_bs58 = bs58::encode(fingerprint).into_string();
         println!("Handshake complete; remote static key fingerprint (sha256 base58): {}", fingerprint_bs58);
-        
+
         for contact in contacts {
             if contact.fingerprint_x() == fingerprint_bs58 {
-                    matched_contact = Some(contact);
+                    matched_contact = Some(contact.clone());
                 break; 
             }
         }
         match matched_contact {
             None => {
-                return Err(AiroiError::UnknownSender(fingerprint_bs58));
+                let peer_addr = socket.peer_addr()?.to_string();
+                let new_contact = match tofu(remote_static.to_vec(), &peer_addr) {
+                    Ok(new_contact) => new_contact,
+                    Err(AiroiError::SenderNotTrusted(_)) => {
+                        eprintln!("Closing connection. Sender not trusted.");
+                        return Ok(())
+                    }
+                    Err(e) => {
+                        return Err(e);
+                    }
+                };
+                matched_contact = Some(new_contact);
             }
             _ => {}
         }
@@ -83,11 +95,11 @@ pub async fn handle_connection(
                 plaintext.truncate(sz);
                 let s = String::from_utf8_lossy(&plaintext).to_string();
                 let message = Message {
-                    sender: matched_contact.unwrap().clone(), // safe, we would have returned an error if this was None
+                    sender: matched_contact.clone().unwrap(), // safe, we would have returned an error if this was None
                     message: s,
                     received: Utc::now().to_rfc3339(),
                 };
-                
+
                 if tx.send(message).await.is_err() {
                     eprintln!("receiver dropped, stopping connection");
                     break;
@@ -146,8 +158,30 @@ pub async fn receive(addr: Option<String>, tx: mpsc::Sender<Message>) -> Result<
 
 
 
+pub fn tofu(raw_remote_static: Vec<u8>, peer_addr: &str) -> Result<Contact> {
+    let mut contacts = get_contacts()?;
+    let name = prompt_tofu()?;
 
+    let new_contact = Contact::new_tofu(name.to_string(), raw_remote_static, peer_addr);
+    contacts.push(new_contact.clone());
+    store_contacts(contacts)?;
+    println!("Contact '{}' added", name);
+    Ok(new_contact)
+}
 
+pub fn prompt_tofu() -> Result<String> {
+    println!("No contact found with this public key. Do you want to add a new contact?");
+    let save = Confirm::new("Do you want to save this contact?")
+        .prompt()
+        .unwrap_or(false);
 
+    if !save {
+        return Err(AiroiError::SenderNotTrusted("User denied TOFU".to_string()));
+    }
+    let name = Text::new("Name:")
+        .prompt()
+        .unwrap_or_else(|_| "Unknown".to_string());
+    Ok(name)
+}
 
 

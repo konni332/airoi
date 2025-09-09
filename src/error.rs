@@ -25,6 +25,9 @@ pub enum AiroiError {
     
     #[error("Unknown Sender: {0}")]
     UnknownSender(String),
+    
+    #[error("Sender not trusted: {0}")]
+    SenderNotTrusted(String),
 }
 
 pub type Result<T> = std::result::Result<T, AiroiError>;
