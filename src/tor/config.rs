@@ -48,6 +48,7 @@ pub fn get_hidden_service_dir() -> PathBuf {
 }
 
 pub async fn wait_for_onion(hidden_service_dir: &PathBuf) -> Result<String> {
+    println!("Waiting for .onion to be ready...");
     let hostname_path = hidden_service_dir.join("hostname");
     for _ in 0..20 {
         if let Ok(addr) = tokio::fs::read_to_string(&hostname_path).await {
@@ -58,6 +59,16 @@ pub async fn wait_for_onion(hidden_service_dir: &PathBuf) -> Result<String> {
     Err(AiroiError::Onion("Onion not ready".to_string()))
 }
 
+pub async fn wait_for_tor_ready() -> Result<()> {
+    println!("Waiting for Tor to be ready...");
+    for _ in 0..30 {
+        if tokio::net::TcpStream::connect("127.0.0.1:9050").await.is_ok() {
+            return Ok(());
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    }
+    Err(AiroiError::Onion("Tor not ready in time".to_string()))
+}
 
 
 

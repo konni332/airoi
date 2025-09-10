@@ -27,6 +27,8 @@ pub async fn send(contact: Contact, msg: &str) -> Result<()> {
     let mut tor_child = crate::tor::config::start_tor_daemon(&torrc)?;
     let onion_addr = crate::tor::config::wait_for_onion(&hidden_service_dir).await?;
     println!("Your onion service address is: {}", onion_addr);
+    crate::tor::config::wait_for_tor_ready().await?;
+    println!("Tor ready");
 
     let tor_stream =
         Socks5Stream::connect("127.0.0.1:9050", format!("{}:4444", contact.address())).await
