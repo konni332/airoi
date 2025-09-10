@@ -40,18 +40,20 @@ pub fn add_contact(contact: Contact) -> Result<()> {
     Ok(())
 }
 
-pub fn remove_contact(name: &str) -> Result<()> {
+pub fn remove_contact(name: &str) -> Result<bool> {
     let mut contacts = get_contacts()?;
+    let mut found = false;
     let mut index = 0;
     for contact in contacts.iter() {
         if contact.name == name {
             contacts.remove(index);
+            found = true;
             break;
         }
         index += 1;
     }
     store_contacts(contacts)?;
-    Ok(())
+    Ok(found)
 }
 
 impl Contact {

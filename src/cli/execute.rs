@@ -27,8 +27,12 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
             println!("Contact '{}' added. Public key (ed25519): {}", name, new_contact.public_key().ed25519_key());
         }
         AiroiCommand::RemoveContact { name } => {
-            airoi_core::keys::contacts::remove_contact(name)?;
-            println!("Contact '{}' removed", name);
+            if airoi_core::keys::contacts::remove_contact(name)? {
+                println!("Contact '{}' removed", name);
+            }
+            else {
+                println!("Contact '{}' not found", name);
+            }
         }
         AiroiCommand::ListContacts => {
             list_contacts()?;
