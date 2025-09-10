@@ -1,7 +1,8 @@
 use snow::Builder;
 use snow::params::NoiseParams;
 use tokio::net::TcpStream;
-use crate::error::Result;
+use tokio_socks::tcp::Socks5Stream;
+use crate::error::{AiroiError, Result};
 use crate::keys::contacts::Contact;
 use crate::keys::key_gen::{get_fingerprint};
 use crate::message::{read_frame, write_frame};
@@ -19,7 +20,12 @@ pub async fn send(contact: Contact, msg: &str) -> Result<()> {
 
     let mut noise = builder.build_initiator()?;
 
-    let mut stream = TcpStream::connect(contact.address()).await?;
+    println!("Sending message to {}", contact.address());
+    // ==== Tor Connection ====
+    let tor_stream =
+        Socks5Stream::connect("127.0.0.1:9050", format!("{}:4444", contact.address())).await
+            .map_err(|e| AiroiError::Onion(e.to_string()))?;
+    let mut stream: TcpStream = tor_stream.into_inner();
     println!("connected to {}", contact.address());
 
     // Handshake

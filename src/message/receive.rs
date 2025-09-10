@@ -8,6 +8,7 @@ use crate::error::{Result, AiroiError};
 use crate::keys::contacts::{get_contacts, store_contacts, Contact};
 use crate::message::{read_frame, write_frame, Message};
 use crate::storage::fetch_local_keypair;
+use crate::tor::config::setup_tor;
 
 pub async fn handle_connection(
     builder: snow::Builder<'_>,
@@ -120,6 +121,15 @@ pub const DEFAULT_ADDRESS: &str = "0.0.0.0:4444";
 
 pub async fn receive(addr: Option<String>, tx: mpsc::Sender<Message>) -> Result<()> {
     let addr = addr.unwrap_or(DEFAULT_ADDRESS.to_string());
+
+    // Tor config
+    let torrc = setup_tor().await?;
+    let hidden_service_dir = crate::tor::config::get_hidden_service_dir();
+    // Tor start
+    let mut _tor_child = crate::tor::config::start_tor_daemon(&torrc)?;
+    // Wait for onion address
+    let onion_addr = crate::tor::config::wait_for_onion(&hidden_service_dir).await?;
+    println!("Your onion service address is: {}", onion_addr);
 
     let key_pair = fetch_local_keypair()?;
     let local_priv = key_pair.private_key().x25519_key_raw().to_vec();

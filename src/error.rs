@@ -40,6 +40,9 @@ pub enum AiroiError {
 
     #[error("XChaCha20Poly1305 Error: {0}")]
     XChaCha20Poly1305(String),
+    
+    #[error("Onion Error: {0}")]
+    Onion(String),
 }
 
 pub type Result<T> = std::result::Result<T, AiroiError>;
