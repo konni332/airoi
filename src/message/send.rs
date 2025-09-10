@@ -22,6 +22,12 @@ pub async fn send(contact: Contact, msg: &str) -> Result<()> {
 
     println!("Sending message to {}", contact.address());
     // ==== Tor Connection ====
+    let torrc = crate::tor::config::setup_tor().await?;
+    let hidden_service_dir = crate::tor::config::get_hidden_service_dir();
+    let mut tor_child = crate::tor::config::start_tor_daemon(&torrc)?;
+    let onion_addr = crate::tor::config::wait_for_onion(&hidden_service_dir).await?;
+    println!("Your onion service address is: {}", onion_addr);
+
     let tor_stream =
         Socks5Stream::connect("127.0.0.1:9050", format!("{}:4444", contact.address())).await
             .map_err(|e| AiroiError::Onion(e.to_string()))?;
@@ -56,5 +62,7 @@ pub async fn send(contact: Contact, msg: &str) -> Result<()> {
     let mut cipher = vec![0u8; 65535]; // big enough buffer
     let len = transport.write_message(msg.as_bytes(), &mut cipher)?;
     write_frame(&mut stream, &cipher[..len]).await?;
+
+    tor_child.kill()?;
     Ok(())
 }
