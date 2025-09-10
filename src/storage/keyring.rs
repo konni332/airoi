@@ -18,7 +18,7 @@ pub fn save_keypair_to_keyring(service: &str, account: &str, kp: &KeyPair) -> Re
 pub fn load_keypair_from_keyring(service: &str, account: &str) -> Result<KeyPair> {
     let kr = Entry::new(service, account)?;
     let encoded = kr.get_password()?;
-    
+
     let bytes = general_purpose::STANDARD.decode(&encoded)?;
     let kp: KeyPair = serde_json::from_slice(&bytes)?;
     Ok(kp)

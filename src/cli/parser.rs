@@ -37,4 +37,6 @@ pub enum AiroiCommand {
     Receive { addr: Option<String> },
     
     Send { name: String, message: String },
+    #[clap(alias = "whoami")]
+    WhoAmI,
 }

@@ -4,6 +4,7 @@ mod encrypted_file;
 use crate::keys::KeyPair;
 use zeroize::Zeroize;
 use crate::error::Result;
+use crate::storage::encrypted_file::get_passphrase;
 use crate::storage::keyring::{load_keypair_from_keyring, save_keypair_to_keyring};
 
 pub struct LocalKeyFile {
@@ -26,10 +27,24 @@ pub fn zeroize_keypair_inplace(kp: &mut KeyPair) {
 }
 
 pub fn store_keypair(kp: &KeyPair) -> Result<()> {
-    save_keypair_to_keyring("airoi", "default", kp)?;
+    if save_keypair_to_keyring("airoi", "default", kp).is_ok() {
+        println!("Keypair stored in OS specific vault");
+        return Ok(());
+    }
+    println!("OS Keyring not available. Storing keypair in encrypted file");
+    let pass = rpassword::prompt_password("Choose a passphrase: ")?;
+    let path = encrypted_file::save_keypair_to_encrypted_file(kp, &pass)?;
+    println!("Keypair stored in encrypted file: {}", path.display());
     Ok(())
 }
 
 pub fn fetch_local_keypair() -> Result<KeyPair> {
-    load_keypair_from_keyring("airoi", "default")
+    match load_keypair_from_keyring("airoi", "default") {
+        Ok(kp) => Ok(kp),
+        Err(_) => {
+            let pass = get_passphrase();
+            let kp = encrypted_file::load_keypair_from_encrypted_file(&pass)?;
+            Ok(kp)
+        }
+    }
 }

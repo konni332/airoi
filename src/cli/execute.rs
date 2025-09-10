@@ -13,7 +13,6 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
         AiroiCommand::KeyGen => {
             let key_pair = generate_key_pair()?;
             store_keypair(&key_pair)?;
-            println!("New key pair stored in OS specific vault");
             println!("    Public key (ed25519): {}", key_pair.public_key().ed25519_key());
         }
         AiroiCommand::Fingerprint => {
@@ -58,6 +57,10 @@ pub async fn execute_cli_command(cli: &Cli) -> anyhow::Result<()> {
             }
             bail!("Contact not found")
 
+        }
+        AiroiCommand::WhoAmI => {
+            let current = fetch_local_keypair()?;
+            println!("Public key (ed25519): {}", current.public_key().ed25519_key());
         }
     }
     Ok(())
